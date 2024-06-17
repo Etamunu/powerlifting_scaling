@@ -1,0 +1,196 @@
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from scipy.interpolate import interp1d
+from scipy.stats import gaussian_kde
+from scipy.optimize import curve_fit
+
+# Specify the path to your CSV file
+csv_file_path = 'openpower_clean.csv'
+
+# Read the CSV file into a pandas DataFrame
+df = pd.read_csv(csv_file_path)
+
+# Filter the DataFrame to include only males
+male_df = df[df['Sex'] == 'M']
+
+##### Plot the data in myriads#####
+
+# Calculate the myriads for bodyweight
+centiles = np.linspace(0, 100, num=10000)  # 10000 myriads from 0 to 100
+centile_values = np.percentile(male_df['BodyweightKg'], centiles)
+
+# Calculate the average weight lifted for each myriad
+average_weights = []
+for i in range(len(centiles) - 1):
+    lower_bound = centile_values[i]
+    upper_bound = centile_values[i + 1]
+    centile_df = male_df[(male_df['BodyweightKg'] >= lower_bound) & (male_df['BodyweightKg'] < upper_bound)]
+    average_weight = centile_df['TotalKg'].mean()
+    average_weights.append(average_weight)
+
+# Create a scatter plot
+plt.scatter(centile_values[1:], average_weights, marker='+', color='k', label='Data')
+
+plt.title('Average Weight Lifted by Male Centiles')
+plt.xlabel('Bodyweight Centiles (Kg)')
+plt.ylabel('Average Weight Lifted (Kg)')
+plt.grid(True)
+plt.legend()
+
+# Show the plot
+plt.savefig('average_weight_lifted_males_centiles.png')
+
+##### NOT WORKING UNLESS NUMBER OF POINTS PLOTTED IS 100 #####
+
+# Define the logistic function
+#def logistic_function(x, a, b, c):
+    #return a / (b + np.exp(-c * x))
+
+# Convert data to numpy arrays
+#x_data = np.array(centile_values[1:])
+#y_data = np.array(average_weights)
+
+# Fit the logistic function to the data using curve_fit
+#params, covariance = curve_fit(logistic_function, x_data, y_data, p0=[87, 0.12, 0.03])
+
+# Extract the fitted parameters
+#a, b, c = params
+#print(params)
+
+# Generate y values using the fitted parameters
+#y_fit = logistic_function(x_data, a, b, c)
+
+#plt.plot(x_data, y_fit, linestyle='--', color='r', label='Logistic Function Fit')
+#plt.legend()
+#plt.savefig('logistic function')
+
+# Show the plot
+#plt.savefig('average_weight_lifted_males_centiles.png')
+
+##### Frequency histogram #####
+
+# Define the number of bins
+num_bins = 200
+
+# Calculate the frequency of bodyweight in bins
+frequency, bin_edges = np.histogram(male_df['BodyweightKg'], bins=num_bins)
+
+# Create a bar chart
+plt.figure(figsize=(8, 6))
+plt.bar(bin_edges[:-1], frequency, width=np.diff(bin_edges), edgecolor="black", align="edge")
+plt.title('Frequency of Bodyweight in Males')
+plt.xlabel('Bodyweight (Kg)')
+plt.ylabel('Frequency')
+plt.grid(True)
+
+# Show the plot
+plt.savefig('frequency_bodyweight_males.png')
+
+##### calculating KDE #####
+
+# Extract the bodyweight data
+bodyweight_data = male_df['BodyweightKg']
+
+# Calculate the KDE
+kde = gaussian_kde(bodyweight_data)
+
+# Create an x range for the KDE plot
+x_range = np.linspace(bodyweight_data.min(), bodyweight_data.max(), 1000)
+kde_values = kde(x_range)
+
+# Plot the KDE
+plt.figure(figsize=(10, 6))
+plt.plot(x_range, kde_values, color='b')
+plt.title('Kernel Density Estimation of Bodyweight in Males')
+plt.xlabel('Bodyweight (Kg)')
+plt.ylabel('Density')
+plt.grid(True)
+
+# Save and show the plot
+plt.savefig('kde_bodyweight_males.png')
+
+##### Reweighting ##### 
+
+##Instead, you need to calculate the kde values on an array (x_1, x_2, ... ,x_n),  for instance equally spread points between the smallest and the largest bodyweight 
+x_grid = np.linspace(bodyweight_data.min(), bodyweight_data.max(), 1000)
+
+#Then you can apply the kde to this grid
+kde_values_grid = kde(x_grid)
+
+#You can use an interpolation method to have a smooth function
+interp_kde = interp1d(x_grid, kde_values_grid)
+
+#This is a function that you can evaluate on every bodyweights without crashing the computer
+kde_values = interp_kde(bodyweight_data)
+
+#For the re-sampling weights you need to take the inverse of the elements of kde_values and to normalise them
+weights = 1 / kde_values
+weights = weights / np.sum(weights)
+
+#define sample size#
+sample_size = 10000
+
+#Now you can use these weights to draw a bunch of indices 
+indices = np.random.choice(len(bodyweight_data), size=sample_size, p=weights)
+
+x = male_df['BodyweightKg'].iloc[indices]
+y = male_df['TotalKg'].iloc[indices]
+
+
+# Create a scatter plot
+plt.figure(figsize=(10, 6))
+plt.scatter(x, y, marker='+', color='k', label='Data')
+plt.title('Average Weight Lifted by Male Centiles')
+plt.xlabel('Bodyweight (Kg)')
+plt.ylabel('Weight Lifted (Kg)')
+plt.grid(True)
+plt.legend()
+
+# Show the plot
+plt.savefig('resampled_average_weight_lifted_males_centiles.png')
+
+##### Checking resample is distributed evenly #####
+
+# Define the number of bins
+num_bins = 100
+
+# Calculate the frequency of bodyweight in bins
+frequency, bin_edges = np.histogram(x, bins=num_bins)
+
+# Create a bar chart
+plt.figure(figsize=(8, 6))
+plt.bar(bin_edges[:-1], frequency, width=np.diff(bin_edges), edgecolor="black", align="edge")
+plt.title('Frequency of Bodyweight in Resampled Males')
+plt.xlabel('Bodyweight (Kg)')
+plt.ylabel('Frequency')
+plt.grid(True)
+
+# Show the plot
+plt.savefig('resampled_frequency_bodyweight_males.png')
+
+##### SAME ERROR AS ABOVE #####
+
+# Define the logistic function
+#def logistic_function(x, a, b, c):
+    #return a / (b + np.exp(-c * x))
+
+# Convert data to numpy arrays
+#x_data = np.array(centile_values[1:])
+#y_data = np.array(average_weights)
+
+# Fit the logistic function to the data using curve_fit
+#params, covariance = curve_fit(logistic_function, x_data, y_data, p0=[87, #0.12, 0.03])
+
+# Extract the fitted parameters
+#a, b, c = params
+#print(params)
+
+# Generate y values using the fitted parameters
+#y_fit = logistic_function(x_data, a, b, c)
+#plt.plot(x_data, y_fit, linestyle='--', color='r', label='Logistic Function Fit')
+#plt.legend()
+#plt.savefig('logistic function')
+
+# Show the plot
+#plt.savefig('average_weight_lifted_males_centiles.png')
