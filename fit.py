@@ -36,7 +36,7 @@ x_grid = np.linspace(min(dfm['BodyweightKg']), max(dfm['BodyweightKg']), 1000)
 kde_values_grid = kde(x_grid)
 interp_kde = interp1d(x_grid, kde_values_grid)
 kde_values = interp_kde(dfm['BodyweightKg'])
-weights = 1 / kde_values
+weights = 1. / kde_values
 weights = weights / np.sum(weights)
 sample_size = 10000
 x= dfm['BodyweightKg']
@@ -50,8 +50,8 @@ y_sampled = y[sample_indices]
 # Noise
 #x_sampled = add_noise(x_sampled, np.sqrt(np.min(x_sampled)))
 #y_sampled = add_noise(y_sampled, np.sqrt(np.min(y_sampled)))
-#x_sampled = add_noise(x_sampled, np.min(x_sampled)/2)
-#y_sampled = add_noise(y_sampled, np.min(y_sampled)/2)
+#x_sampled = add_noise(x_sampled, np.min(x_sampled))
+#y_sampled = add_noise(y_sampled, np.min(y_sampled))
 
 #### Fit the resampled dataset ####
 popt3, pcov3 = curve_fit(logistic, x_sampled, y_sampled, p0=[np.max(y) , 0.01, np.mean(x)])
@@ -106,6 +106,15 @@ plt.axvline(x=Fedosienko, color='red')
 plt.text(Fedosienko+0.01, 1, s='Sergei Fedosienko', rotation=90, verticalalignment='center')
 plt.xlabel('Score')
 plt.ylabel('Frequency')
+plt.gcf().set_size_inches(15, 6)
+plt.title('Distribution of score')
+plt.show()
+
+#### Analysis of the score distribution in the IPF weight classes ####
+classes = [0,59,66,74,83,93,105,120,np.max(dfm['BodyweightKg'])]
+dfm['class'] = pd.cut(dfm['BodyweightKg'], bins=classes, right=False, include_lowest=True)
+dfm.boxplot(column='score', by='class', grid=False)
+plt.show()
 plt.gcf().set_size_inches(15, 6)
 plt.title('Distribution of score')
 plt.show()
