@@ -7,7 +7,7 @@ from scipy.stats import gaussian_kde
 from scipy.stats import norm
 
 #### Data loading ####
-file_path = 'openpower-filter.csv' # Path to your CSV file
+file_path = 'openpower-filtered.csv' # Path to your CSV file
 df = pd.read_csv(file_path)
 
 dfm = df[df['Sex'] == 'M']
@@ -21,10 +21,12 @@ def GL(x, L, x0, k):
     return L-np.exp(-k* x+x0)
 
 #### Gaussian noise ####
-def add_noise(data, c):
-    epsilon = np.random.normal(loc=0, scale=c, size=data.shape)
-    perturbed_data = data + epsilon
-    return perturbed_data
+def add_noise(x, y, intervals, x_var, y_var):
+    perturbed_x = np.array([xi + np.random.normal(loc=0, scale=np.sqrt(x_var[j]))
+                            for xi in x for j, (lower, upper) in enumerate(intervals) if lower <= xi < upper])
+    perturbed_y = np.array([yi + np.random.normal(loc=0, scale=np.sqrt(y_var[j]))
+                            for yi, xi in zip(y, x) for j, (lower, upper) in enumerate(intervals) if lower <= xi < upper])
+    return perturbed_x, perturbed_y
 
 #### Fit the original dataset ####
 popt, pcov = curve_fit(logistic, dfm['BodyweightKg'], dfm['TotalKg'], p0=[np.max(dfm['TotalKg']) , 0.01, np.mean(dfm['BodyweightKg'])])
@@ -48,10 +50,24 @@ x_sampled = x[sample_indices]
 y_sampled = y[sample_indices]
 
 # Noise
-#x_sampled = add_noise(x_sampled, np.sqrt(np.min(x_sampled)))
-#y_sampled = add_noise(y_sampled, np.sqrt(np.min(y_sampled)))
-#x_sampled = add_noise(x_sampled, np.min(x_sampled))
-#y_sampled = add_noise(y_sampled, np.min(y_sampled))
+noise_var = {}
+classes_limits= [0,50,75,np.max(dfm['BodyweightKg'])]
+classes = [(classes_limits[i], classes_limits[i+1]) for i in range(len(classes_limits) - 1)]
+x_var = []
+y_var = []
+for lower, upper in classes:
+    x_c = x_sampled[(x_sampled >= lower) & (x_sampled < upper)]
+    y_c = y_sampled[(x_sampled >= lower) & (x_sampled < upper)]
+    if len(x_c) > 1:
+        x_v = np.sqrt(np.min(x_c))
+        y_v = np.sqrt(np.min(y_c))
+    else:
+        variance = 0
+    x_var.append(x_v)
+    y_var.append(y_v)
+
+
+x_sampled, y_sampled = add_noise(x_sampled, y_sampled, classes, x_var, y_var)
 
 #### Fit the resampled dataset ####
 popt3, pcov3 = curve_fit(logistic, x_sampled, y_sampled, p0=[np.max(y) , 0.01, np.mean(x)])
