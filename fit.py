@@ -11,14 +11,17 @@ file_path = 'openpower-filtered.csv' # Path to your CSV file
 df = pd.read_csv(file_path)
 
 dfm = df[df['Sex'] == 'M']
-dff = df[df['Sex'] == 'F']
+dff = df[df['Sex'] == 'F'] 
+# For illustration purpose this code only includes the analysis of the male athletes. 
+# If you wish to perform the analysis for female athletes, you should replace 'dfm' by 'dff' in the subsequent code.
 
 #### Functions to fit ####
 def logistic(x, L, k, x0):
     return L/ (1 + np.exp(-k * (x - x0)))
 
-def GL(x, L, x0, k):
+def GL(x, L, x0, k): # Mimics the function used for the IPF GL score.
     return L-np.exp(-k* x+x0)
+
 
 #### Gaussian noise ####
 def add_noise(x, y, intervals, x_var, y_var):
