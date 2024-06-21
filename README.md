@@ -1,4 +1,4 @@
-# powerlifting scaling
+# Powerlifting Scaling
 
 ## Description
 
