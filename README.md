@@ -10,8 +10,9 @@ The distribution of bodyweights in the open powerlifting database is not uniform
 
 ## Source
 
-This project uses data that can be downloaded at
-https://openpowerlifting.gitlab.io/opl-csv/bulk-csv.html
+Website of the IPF : https://www.powerlifting.sport/
+
+This project uses data that can be downloaded at : https://openpowerlifting.gitlab.io/opl-csv/bulk-csv.html
 
 ## Roadmap
 
