@@ -158,10 +158,11 @@ plt.title('Distribution of score')
 plt.show()
 
 #### Analysis of the score distribution in the IPF weight classes (original dataset) (the boxplots should be aligned if the score is unbiased) ####
-classes = [0,59,66,74,83,93,105,120,np.max(dfu['BodyweightKg'])]
+if user_input == 'F':
+    classes = [0,47,52,57,63,69,76,84,np.max(dfu['BodyweightKg'])]
+else :
+    classes = [0,59,66,74,83,93,105,120,np.max(dfu['BodyweightKg'])]
 dfu['class'] = pd.cut(dfu['BodyweightKg'], bins=classes, right=False, include_lowest=True)
 dfu.boxplot(column='score', by='class', grid=False)
-plt.title('Distribution of score in the IPF classes (original dataset)')
-plt.show()
 plt.title('Distribution of score in the IPF classes (original dataset)')
 plt.show()
