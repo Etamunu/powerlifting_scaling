@@ -27,7 +27,6 @@ def logistic(x, L, k, x0):
 def GL(x, L, x0, k): # Mimics the function used for the IPF GL score.
     return L-np.exp(-k* x+x0)
 
-
 #### Gaussian noise ####
 def add_noise(x, y, intervals, x_var, y_var):
     perturbed_x = np.array([xi + np.random.normal(loc=0, scale=np.sqrt(x_var[j]))
@@ -114,7 +113,7 @@ plt.legend()
 plt.show()
 
 #### Analysis of the bodyweight distribution in the resampled dataset (it should be roughly uniform) ####
-n, bins, patches = plt.hist(x_sampled, bins=100, color='white', edgecolor='black', density=True)
+lt.hist(x_sampled, bins=100, color='white', edgecolor='black', density=True)
 plt.xlabel('Bodyweight (Kg)')
 plt.ylabel('Frequency')
 plt.show()
@@ -122,7 +121,7 @@ plt.show()
 #### Analysis of the score distribution (it should be centered on 1) ####
 dfu['score'] = dfu['TotalKg']/logistic(dfu['BodyweightKg'], *popt3)
 dfu=dfu[~np.isnan(dfu['score'])]  
-n, bins, patches = plt.hist(dfu['score'], bins=100, color='white', edgecolor='black', density=True)
+plt.hist(dfu['score'], bins=100, color='white', edgecolor='black', density=True)
 mu, std = norm.fit(dfu['score'])
 xmin, xmax = plt.xlim()
 x = np.linspace(xmin, xmax, 1000)
