@@ -17,7 +17,7 @@ This project uses data that can be downloaded at : https://openpowerlifting.gitl
 ## Roadmap
 
   - improve the setup of the Gaussian noise
-  - analysis of individual lifts
+  - analysis of individual lifts separately (Squat, Bench Press and Deadlift)
   - consider more general families of functions
   - add a functionality to download the dataset directly from the OpenPowerlifting Data Service instead of accessing it locally
 
