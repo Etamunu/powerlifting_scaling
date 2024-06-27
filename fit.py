@@ -113,7 +113,7 @@ plt.legend()
 plt.show()
 
 #### Analysis of the bodyweight distribution in the resampled dataset (it should be roughly uniform) ####
-lt.hist(x_sampled, bins=100, color='white', edgecolor='black', density=True)
+plt.hist(x_sampled, bins=100, color='white', edgecolor='black', density=True)
 plt.xlabel('Bodyweight (Kg)')
 plt.ylabel('Frequency')
 plt.show()
