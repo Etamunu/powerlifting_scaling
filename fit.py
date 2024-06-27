@@ -7,7 +7,7 @@ from scipy.stats import gaussian_kde
 from scipy.stats import norm
 
 #### Data loading ####
-file_path = 'openpower-filtered.csv' # Path to your CSV file
+file_path = 'openpower-filter.csv' # Path to your CSV file
 df = pd.read_csv(file_path)
 while True:
     user_input = input("Please enter 'F' for female or 'M' for male: ").upper()
