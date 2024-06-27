@@ -10,7 +10,7 @@ The distribution of bodyweights in the Open Powerlifting database is not uniform
 
 ## References
 
-Website of the I(nternational) P(owerlifting) F(ederation) : https://www.powerlifting.sport/
+Website of the International Powerlifting Federation (IPF) : https://www.powerlifting.sport/
 
 This project uses data that can be downloaded at : https://openpowerlifting.gitlab.io/opl-csv/bulk-csv.html
 
