@@ -8,7 +8,7 @@ The present code fits a logistic function to estimate the relationship between t
 
 The distribution of bodyweights in the Open Powerlifting database is not uniform thus this database cannot be used to provide a reliable scoring method for athletes that have an extreme bodyweight. This problem is alleviated by performing a resampling based on a Kernel Density Estimate (KDE).
 
-## Source
+## References
 
 Website of the I(nternational) P(owerlifting) F(ederation) : https://www.powerlifting.sport/
 
