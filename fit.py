@@ -56,7 +56,7 @@ sample_indices = np.random.choice(len(x), size=sample_size, p=weights)
 x_sampled = x[sample_indices]
 y_sampled = y[sample_indices]
 
-# Noise
+# Noise (temporary setup)
 noise_var = {}
 classes_limits= [0,50,75,np.max(dfu['BodyweightKg'])]
 classes = [(classes_limits[i], classes_limits[i+1]) for i in range(len(classes_limits) - 1)]
