@@ -22,7 +22,7 @@ while True:
  
 #### Functions to fit ####
 def logistic(x, L, k, x0):
-    return L/ (1 + np.exp(-k * (x - x0)))
+    return (L/ (1 + np.exp(-k * (x - x0))))-(L/ (1 + np.exp(k * x0)))
 
 def GL(x, L, x0, k): # Mimics the function used for the IPF GL score.
     return L-np.exp(-k* x+x0)
