@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
-from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
 from scipy.interpolate import interp1d
 from scipy.stats import gaussian_kde
 from scipy.stats import norm
@@ -27,13 +27,18 @@ def logistic(x, L, k, x0):
 def GL(x, L, x0, k): # Mimics the function used for the IPF GL score.
     return L-np.exp(-k* x+x0)
 
-#### Gaussian noise ####
-def add_noise(x, y, intervals, x_var, y_var):
-    perturbed_x = np.array([xi + np.random.normal(loc=0, scale=np.sqrt(x_var[j]))
-                            for xi in x for j, (lower, upper) in enumerate(intervals) if lower <= xi < upper])
-    perturbed_y = np.array([yi + np.random.normal(loc=0, scale=np.sqrt(y_var[j]))
-                            for yi, xi in zip(y, x) for j, (lower, upper) in enumerate(intervals) if lower <= xi < upper])
-    return perturbed_x, perturbed_y
+def add_noise(x, y, intervals, x_var, y_var, correlation=0.5): # Gaussian noise to improve the visual after resampling
+    perturbed_x = []
+    perturbed_y = []
+    for xi, yi in zip(x, y):
+        for j, (lower, upper) in enumerate(intervals):
+            if lower <= xi < upper:
+                cov_matrix = [[x_var[j], correlation * np.sqrt(x_var[j] * y_var[j])],
+                              [correlation * np.sqrt(x_var[j] * y_var[j]), y_var[j]]]
+                noise_x, noise_y = np.random.multivariate_normal(mean=[0, 0], cov=cov_matrix)
+                perturbed_x.append(xi + noise_x)
+                perturbed_y.append(yi + noise_y)
+    return np.array(perturbed_x), np.array(perturbed_y)
 
 #### Fit the original dataset ####
 popt, pcov = curve_fit(logistic, dfu['BodyweightKg'], dfu['TotalKg'], p0=[np.max(dfu['TotalKg']) , 0.01, np.mean(dfu['BodyweightKg'])])
@@ -47,7 +52,7 @@ interp_kde = interp1d(x_grid, kde_values_grid)
 kde_values = interp_kde(dfu['BodyweightKg'])
 weights = 1. / kde_values
 weights = weights / np.sum(weights)
-sample_size = 10000
+sample_size = 100000
 x= dfu['BodyweightKg']
 y= dfu['TotalKg']
 x.reset_index(drop=True, inplace=True)
@@ -56,7 +61,7 @@ sample_indices = np.random.choice(len(x), size=sample_size, p=weights)
 x_sampled = x[sample_indices]
 y_sampled = y[sample_indices]
 
-# Noise (temporary setup)
+#### Noise (to help in the visualisation) ####
 noise_var = {}
 classes_limits= [0,50,75,np.max(dfu['BodyweightKg'])]
 classes = [(classes_limits[i], classes_limits[i+1]) for i in range(len(classes_limits) - 1)]
@@ -80,27 +85,28 @@ popt3, pcov3 = curve_fit(logistic, x_sampled, y_sampled, p0=[np.max(y) , 0.01, n
 popt4, pcov4 = curve_fit(GL, x_sampled, y_sampled, p0=[0. , 0., 0.])
 
 #### Plot fit and resampled dataset ####
-plt.plot(x_grid,kde_values_grid, label='KDE') 
+plt.xlabel("Body Weight (kg)")
+plt.ylabel("Frequency")
+plt.plot(x_grid,kde_values_grid, label='KDE')
 bins=np.linspace(min(dfu['BodyweightKg']), max(dfu['BodyweightKg']), 100)
 plt.hist(dfu['BodyweightKg'], bins=bins , density=True, edgecolor=(0, 0, 0, 1), facecolor=(1, 1, 1, 1), label='BW Distribution')
 plt.legend()
+plt.title('Distribution of Bodyweight')
 plt.show()
-plt.rcParams.update({'font.size': 20})
-plt.plot(x_sampled, y_sampled, marker='+', linestyle='None', markersize=10, markeredgewidth=1, color='black')
+plt.plot(x_sampled, y_sampled, marker='o', linestyle='None', markersize=1, markeredgewidth=1, color='black', alpha = 0.4)
 plt.xlabel('Bodyweight (kg)')
 plt.ylabel('Total (kg)')
-plt.plot(list(range(0, 251, 1)), logistic(list(range(0, 251, 1)), *popt), label='Logistic') 
-plt.plot(range(0,251,1), GL(range(0,251,1),*popt2), label='GL')
-plt.plot(list(range(0, 251, 1)), logistic(list(range(0, 251, 1)), *popt3), label='Logistic (resampling)') 
-plt.plot(range(0,251,1), GL(range(0,251,1),*popt4), label='GL (resampling)')
+plt.plot(list(range(0, 251, 1)), logistic(list(range(0, 251, 1)), *popt), label='Logistic', linewidth=2) 
+plt.plot(range(0,251,1), GL(range(0,251,1),*popt2), label='GL', linewidth=2)
+plt.plot(list(range(0, 251, 1)), logistic(list(range(0, 251, 1)), *popt3), label='Logistic (resampling)', linewidth=2) 
+plt.plot(range(0,251,1), GL(range(0,251,1),*popt4), label='GL (resampling)', linewidth=2)
 plt.xlim([0, 250])
-plt.gcf().set_size_inches(15, 6)
 plt.legend()
+plt.title('Total vs Bodyweight (resampled dataset)')
 plt.show()
 
 #### Plot fit and original dataset ####
-plt.rcParams.update({'font.size': 20})
-plt.plot(dfu['BodyweightKg'], dfu['TotalKg'], marker='+', linestyle='None', markersize=10, markeredgewidth=1, color='black')
+plt.plot(dfu['BodyweightKg'], dfu['TotalKg'], marker='o', linestyle='None', markersize=1, markeredgewidth=1, color='black', alpha = 0.4)
 plt.xlabel('Bodyweight (kg)')
 plt.ylabel('Total (kg)')
 plt.plot(list(range(0, 251, 1)), logistic(list(range(0, 251, 1)), *popt), label='Logistic') 
@@ -108,14 +114,14 @@ plt.plot(range(0,251,1), GL(range(0,251,1),*popt2), label='GL')
 plt.plot(list(range(0, 251, 1)), logistic(list(range(0, 251, 1)), *popt3), label='Logistic (resampling)') 
 plt.plot(range(0,251,1), GL(range(0,251,1),*popt4), label='GL (resampling)')
 plt.xlim([0, 250])
-plt.gcf().set_size_inches(15, 6)
 plt.legend()
+plt.title('Total vs Bodyweight (original dataset)')
 plt.show()
 
 #### Analysis of the bodyweight distribution in the resampled dataset (it should be roughly uniform) ####
 plt.hist(x_sampled, bins=100, color='white', edgecolor='black', density=True)
-plt.xlabel('Bodyweight (Kg)')
-plt.ylabel('Frequency')
+plt.title('Distribution of Bodyweight (resampled dataset)')
+plt.gcf().set_size_inches(15, 6)
 plt.show()
 
 #### Analysis of the score distribution (it should be centered on 1) ####
@@ -152,16 +158,48 @@ else:
     
 plt.xlabel('Score')
 plt.ylabel('Frequency')
-plt.gcf().set_size_inches(15, 6)
 plt.title('Distribution of score')
 plt.show()
 
-#### Analysis of the score distribution in the IPF weight classes (original dataset) (the boxplots should be aligned if the score is unbiased) ####
-if user_input == 'F':
-    classes = [0,47,52,57,63,69,76,84,np.max(dfu['BodyweightKg'])]
-else :
-    classes = [0,59,66,74,83,93,105,120,np.max(dfu['BodyweightKg'])]
-dfu['class'] = pd.cut(dfu['BodyweightKg'], bins=classes, right=False, include_lowest=True)
-dfu.boxplot(column='score', by='class', grid=False)
-plt.title('Distribution of score in the IPF classes (original dataset)')
+#### Analysis of the score distribution in the IPF weight classes (original dataset) (the rolling quantiles should be aligned if the score is unbiased) ####
+dfu = dfu.sort_values('BodyweightKg')
+window_size = 100
+
+# Calculate rolling median and quantiles (5th, 10th, 25th, 50th, 75th, 90th, and 95th percentiles)
+dfu['median'] = dfu['score'].rolling(window=window_size, center=True).median()
+dfu['q5'] = dfu['score'].rolling(window=window_size, center=True).quantile(0.05)
+dfu['q10'] = dfu['score'].rolling(window=window_size, center=True).quantile(0.10)
+dfu['q25'] = dfu['score'].rolling(window=window_size, center=True).quantile(0.25)
+dfu['q75'] = dfu['score'].rolling(window=window_size, center=True).quantile(0.75)
+dfu['q90'] = dfu['score'].rolling(window=window_size, center=True).quantile(0.90)
+dfu['q95'] = dfu['score'].rolling(window=window_size, center=True).quantile(0.95)
+
+# Plot the rolling statistics
+plt.figure(figsize=(10, 6))
+
+# Color scheme
+darker_blue = '#1f77b4'
+darker_fill_10_90 = '#1f77b4'
+darker_fill_25_75 = '#1f77b4'
+
+plt.plot(dfu['BodyweightKg'], dfu['median'], label='Median', color=darker_blue)
+plt.fill_between(dfu['BodyweightKg'], dfu['q25'], dfu['q75'], color=darker_fill_25_75, alpha=0.4)
+plt.fill_between(dfu['BodyweightKg'], dfu['q10'], dfu['q90'], color=darker_fill_10_90, alpha=0.2)
+plt.fill_between(dfu['BodyweightKg'], dfu['q5'], dfu['q95'], color=darker_fill_10_90, alpha=0.1)
+
+plt.xlabel('Body Weight (Kg)', fontsize=30)
+plt.ylabel('Score', fontsize=30)
+plt.title('Rolling Quantiles', fontsize=30)
+
+loc_x = np.min(dfu['BodyweightKg'])+15
+
+plt.text(loc_x, dfu['median'].median(), '50%', color='blue', verticalalignment='center', fontsize=22)
+plt.text(loc_x, dfu['q25'].median(), '25%', color='blue', verticalalignment='center', fontsize=22)
+plt.text(loc_x, dfu['q75'].median(), '75%', color='blue', verticalalignment='center', fontsize=22)
+plt.text(loc_x, dfu['q10'].median(), '10%', color='blue', verticalalignment='center', fontsize=22)
+plt.text(loc_x, dfu['q90'].median(), '90%', color='blue', verticalalignment='center', fontsize=22)
+plt.text(loc_x, dfu['q5'].median(), '5%', color='blue', verticalalignment='center', fontsize=22)
+plt.text(loc_x, dfu['q95'].median(), '95%', color='blue', verticalalignment='center', fontsize=22)
+
+# Show the plot
 plt.show()
